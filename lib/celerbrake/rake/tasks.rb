@@ -1,0 +1,112 @@
+# frozen_string_literal: true
+
+require 'celerbrake-ruby'
+
+namespace :celerbrake do
+  desc 'Verify your gem installation by sending a test exception'
+  task test: (:environment if defined?(Rails)) do
+    raise Celerbrake::Error, 'celerbrake-ruby is not configured' unless Celerbrake.configured?
+
+    require 'pp'
+
+    response = Celerbrake.notify_sync('Exception from the test Rake task')
+    if response['error']
+      puts "Error: #{response['error']}"
+    elsif response.nil? || response['code']
+      puts <<-ERROR.gsub(/^\s+\|/, '')
+        |#{response['type']}: #{response['message']} (#{response['code']})
+        |
+        |Possible problems:
+        |  1. Project id/key is incorrect
+        |  2. Custom filters ignore the exception we try to send
+        |  3. Environment this task runs in is ignored (see `ignored_environments`)
+        |
+        |If nothing works, please file an issue at: https://github.com/celerbrake/celerbrake/issues
+      ERROR
+    elsif response['url']
+      puts <<-SUCCESS.gsub(/^\s+\|/, '')
+        |A test exception was sent to Celerbrake.
+        |Find it here: #{response['url']}
+      SUCCESS
+    else
+      puts <<-ERROR.gsub(/^\s+\|/, '')
+        |Unexpected error occurred. Response from Celerbrake:
+        |#{response}
+      ERROR
+    end
+  end
+
+  desc 'Notify Celerbrake of a new deploy'
+  task :deploy do
+    if defined?(Rails)
+      initializer = Rails.root.join('config', 'initializers', 'celerbrake.rb')
+
+      # Avoid loading the environment to speed up the deploy task and try guess
+      # the initializer file location.
+      if initializer.exist? && !Celerbrake.configured?
+        load(initializer)
+      else
+        Rake::Task[:environment].invoke
+      end
+    end
+
+    raise Celerbrake::Error, 'celerbrake-ruby is not configured' unless Celerbrake.configured?
+
+    deploy_params = {
+      environment: ENV.fetch('ENVIRONMENT', nil),
+      username: ENV.fetch('USERNAME', nil),
+      revision: ENV.fetch('REVISION', nil),
+      repository: ENV.fetch('REPOSITORY', nil),
+      version: ENV.fetch('VERSION', nil),
+    }
+    promise = Celerbrake.notify_deploy(deploy_params)
+    promise.then do
+      puts "The #{deploy_params[:environment]} environment was deployed."
+    end
+    promise.rescue { |error| abort(error) }
+  end
+
+  desc 'Install a Heroku deploy hook to notify Celerbrake of deploys'
+  task :install_heroku_deploy_hook do
+    app = ENV.fetch('HEROKU_APP', nil)
+
+    config = Bundler.with_clean_env do
+      `heroku config --shell#{" --app #{app}" if app}`
+    end
+
+    heroku_env = config.each_line.with_object({}) do |line, h|
+      h.merge!(Hash[*line.rstrip.split("\n").flat_map { |v| v.split('=', 2) }])
+    end
+
+    id = heroku_env['CELERBRAKE_PROJECT_ID']
+    key = heroku_env['CELERBRAKE_API_KEY']
+
+    exit!(1) if [id, key].any?(&:nil?)
+
+    unless (env = heroku_env['RAILS_ENV'])
+      env = 'production'
+      puts "Celerbrake couldn't identify your app's environment, so the '#{env}'" \
+           " environment will be used."
+    end
+
+    unless (repo = ENV.fetch('REPOSITORY_URL', nil))
+      repo = `git remote get-url origin 2>/dev/null`.chomp
+      if repo.empty?
+        puts "Celerbrake couldn't identify your app's repository."
+      else
+        puts "Celerbrake couldn't identify your app's repository, so the " \
+             "'origin' remote url '#{repo}' will be used."
+      end
+    end
+
+    url = ["https://celerbrake.com/api/v3/projects/#{id}/heroku-deploys?key=#{key}"]
+    url << "&environment=#{env}"
+    url << "&repository=#{repo}" unless repo.empty?
+
+    command = [%(heroku addons:create deployhooks:http --url="#{url.join}")]
+    command << " --app #{app}" if app
+
+    puts "$ #{command.join}"
+    Bundler.with_clean_env { puts `#{command}` }
+  end
+end

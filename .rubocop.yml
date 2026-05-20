@@ -1,0 +1,116 @@
+# Explanations of all possible options:
+#   https://github.com/bbatsov/rubocop/blob/master/config/default.yml
+AllCops:
+  TargetRubyVersion: 2.6
+  DisplayCopNames: true
+  DisplayStyleGuide: true
+  NewCops: enable
+  Exclude:
+    - 'gemfiles/*.gemfile'
+    - 'vendor/**/*'
+
+Metrics/MethodLength:
+  Max: 25
+
+Layout/LineLength:
+  Max: 90
+
+# Details:
+#   http://c2.com/cgi/wiki?AbcMetric
+Metrics/AbcSize:
+  # The ABC size is a calculated magnitude, so this number can be a Fixnum or
+  # a Float.
+  Max: 20
+
+Style/StringLiterals:
+  Enabled: false
+
+Style/HashSyntax:
+  EnforcedStyle: ruby19
+
+Style/NumericLiterals:
+  Enabled: false
+
+Style/SignalException:
+  EnforcedStyle: only_raise
+
+Style/FrozenStringLiteralComment:
+  Enabled: true
+  EnforcedStyle: always
+  Exclude:
+    - 'Gemfile'
+    - 'celerbrake.gemspec'
+    - '**/*.gemfile'
+
+Metrics/BlockLength:
+  CountComments: false
+  Max: 25
+  IgnoredMethods:
+    - describe
+    - context
+  Exclude:
+    - 'Rakefile'
+    - '**/*.rake'
+    - 'spec/**/*.rb'
+    - 'celerbrake.gemspec'
+    - 'lib/celerbrake/rake/tasks.rb'
+
+Layout/HeredocIndentation:
+  Enabled: false
+
+Naming/FileName:
+  Exclude:
+    - 'Appraisals'
+
+Gemspec/OrderedDependencies:
+  Enabled: false
+
+Gemspec/RequiredRubyVersion:
+  Enabled: false
+
+# Broken behaviour: https://github.com/bbatsov/rubocop/issues/5224
+Layout/EmptyLinesAroundArguments:
+  Enabled: false
+
+Bundler/OrderedGems:
+  Enabled: false
+
+Naming/MethodParameterName:
+  Enabled: false
+
+Style/SymbolArray:
+  Exclude:
+    - gemfiles/*.gemfile
+
+Style/NumericPredicate:
+  Enabled: false
+
+Style/TrailingCommaInArguments:
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: comma
+
+Naming/RescuedExceptionsVariableName:
+  Enabled: false
+
+Lint/NonDeterministicRequireOrder:
+  Enabled: false
+
+Lint/RaiseException:
+  Enabled: true
+
+Lint/StructNewOverride:
+  Enabled: true
+
+Style/HashEachMethods:
+  Enabled: true
+
+Style/HashTransformKeys:
+  Enabled: true
+
+Style/HashTransformValues:
+  Enabled: true
