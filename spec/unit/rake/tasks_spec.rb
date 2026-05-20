@@ -1,0 +1,72 @@
+# frozen_string_literal: true
+
+RSpec.describe "celerbrake/rake/tasks" do
+  let(:endpoint) do
+    'https://api.celerbrake.com/api/v4/projects/113743/deploys'
+  end
+
+  def wait_for_a_request_with_body(body)
+    wait_for(a_request(:post, endpoint).with(body: body)).to have_been_made.once
+  end
+
+  before do
+    stub_request(:post, endpoint).to_return(status: 201, body: '{}')
+    allow($stdout).to receive(:puts).and_return(nil)
+  end
+
+  describe "celerbrake:deploy" do
+    let(:task) { Rake::Task['celerbrake:deploy'] }
+
+    after { task.reenable }
+
+    shared_examples 'deploy payload' do |key, val|
+      it "sends #{key}" do
+        ENV[key.upcase] = val
+        task.invoke
+
+        wait_for_a_request_with_body(/{.*"#{key}":"#{val}".*}/)
+        ENV[key.upcase] = nil
+      end
+    end
+
+    [%w[environment production],
+     %w[username john],
+     %w[revision 123abcdef],
+     %w[repository https://github.com/celerbrake/celerbrake'],
+     %w[version v2.0]].each do |(key, val)|
+      include_examples 'deploy payload', key, val
+    end
+
+    context "when Celerbrake is not configured" do
+      let(:deploy_endpoint) { 'https://api.celerbrake.com/api/v3/projects/113743/notices' }
+
+      before do
+        stub_request(:post, deploy_endpoint)
+        expect(Celerbrake).to receive(:configured?).and_return(false)
+      end
+
+      it "raises error" do
+        expect { task.invoke }
+          .to raise_error(Celerbrake::Error, 'celerbrake-ruby is not configured')
+      end
+    end
+  end
+
+  describe "celerbrake:install_heroku_deploy_hook" do
+    let(:task) { Rake::Task['celerbrake:install_heroku_deploy_hook'] }
+
+    after { task.reenable }
+
+    let(:celerbrake_vars) { "CELERBRAKE_PROJECT_ID=1\nCELERBRAKE_API_KEY=2\nRAILS_ENV=3\n" }
+    let(:silenced_stdout) { File.new(File::NULL, 'w') }
+
+    describe "parsing environment variables" do
+      it "does not raise when an env variable value contains '='" do
+        heroku_config = "#{celerbrake_vars} URL=https://celerbrake.com/docs?key=11\n"
+        expect(Bundler).to receive(:with_clean_env).twice.and_return(heroku_config)
+
+        task.invoke
+      end
+    end
+  end
+end
