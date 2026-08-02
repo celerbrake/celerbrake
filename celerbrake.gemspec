@@ -4,10 +4,10 @@ Gem::Specification.new do |s|
   s.name        = 'celerbrake'
   s.version     = Celerbrake::CELERBRAKE_VERSION.dup
   s.summary     = <<SUMMARY
-Celerbrake provides self-hosted exception tracking for Ruby applications.
+Celerbrake provides cloud-based exception tracking for Ruby applications.
 SUMMARY
   s.description = <<DESC
-Celerbrake provides self-hosted, robust exception tracking for any Ruby
+Celerbrake provides robust, cloud-based exception tracking for any Ruby
 application. It lets you review errors, tie an error to an individual piece of
 code, and trace the cause back to recent changes. The Celerbrake dashboard
 provides easy categorization, searching, and prioritization of exceptions so
@@ -42,10 +42,10 @@ DESC
   s.add_development_dependency 'rspec-wait', '~> 0'
   s.add_development_dependency 'rake', '~> 13'
   s.add_development_dependency 'pry', '~> 0'
-  s.add_development_dependency 'appraisal'
+  s.add_development_dependency 'appraisal', '~> 2.0'
   s.add_development_dependency 'rack', '~> 2'
   s.add_development_dependency 'webmock', '~> 3'
-  s.add_development_dependency 'amq-protocol'
+  s.add_development_dependency 'amq-protocol', '~> 2.0'
   s.add_development_dependency 'rack-test', '~> 1.1'
   s.add_development_dependency 'redis', '~> 4.5'
   s.add_development_dependency 'sidekiq', '~> 6'
