@@ -10,7 +10,7 @@ gem "rack", "~> 2.0"
 gem "activerecord-jdbcsqlite3-adapter", github: "jruby/activerecord-jdbc-adapter", branch: "61-stable", platforms: :jruby
 gem "sqlite3", "~> 1.4", platforms: [:mri, :rbx]
 gem "resque", "~> 1.26"
-gem "resque_spec", github: "celerbrake/resque_spec"
+gem "resque_spec", github: "airbrake/resque_spec"
 gem "delayed", "~> 0.4"
 gem "mime-types", "~> 3.1"
 
