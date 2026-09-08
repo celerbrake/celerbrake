@@ -82,4 +82,5 @@ jobs:
       # still FAILS on an offence; it just no longer hides whether the suites
       # pass.
       - name: Rubocop lint
+        if: ${{ always() }}
         run: bundle exec rubocop
