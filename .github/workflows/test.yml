@@ -34,14 +34,20 @@ jobs:
       - name: Install Bundler dependencies
         run: bundle install
 
-      - name: Install Appraisal dependencies
-        run: bundle exec appraisal install
-
       - name: Display Ruby version
         run: ruby -v
 
+      # Unit specs need only the main bundle, so run them BEFORE appraisal. The
+      # integration gemfiles pull `resque_spec` from github:celerbrake/resque_spec,
+      # a fork that was never created when these gems moved into the org — so
+      # `appraisal install` cannot resolve and, in the old order, took the unit
+      # suite down with it. Until that repo exists, this is the difference
+      # between some coverage and none.
       - name: Unit tests
         run: bundle exec rake spec:unit
+
+      - name: Install Appraisal dependencies
+        run: bundle exec appraisal install
 
       - name: Test Rails 5.2
         if: ${{ matrix.ruby != '3.0' && matrix.ruby != '3.1' }}
