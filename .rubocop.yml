@@ -12,6 +12,20 @@ AllCops:
 Metrics/MethodLength:
   Max: 25
 
+# This gem declares its development dependencies in the GEMSPEC on purpose —
+# inherited shape, and it keeps `gem build` self-describing. The cop is a style
+# preference that arrived enabled (see NewCops below), turning a dozen
+# deliberate lines into build-breaking offences with no code change.
+Gemspec/DevelopmentDependencies:
+  Enabled: false
+
+# NOTE: `NewCops: enable` above means every rubocop release can add cops that
+# fail this build without a single line changing here — which is exactly how CI
+# went red on 2026-05-20 and stayed red, hiding the fact that the test steps
+# below it were being SKIPPED entirely. Keeping it enabled is defensible (new
+# checks are worth having), but it is only safe because the Test steps now run
+# even when lint fails.
+
 Layout/LineLength:
   Max: 90
 

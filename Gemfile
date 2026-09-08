@@ -9,7 +9,9 @@ celerbrake_ruby_path = File.expand_path('../celerbrake-ruby', __dir__)
 if File.directory?(celerbrake_ruby_path)
   gem 'celerbrake-ruby', path: celerbrake_ruby_path
 else
-  gem 'celerbrake-ruby', git: 'https://github.com/celerbrake/celerbrake-ruby.git', branch: 'main'
+  gem 'celerbrake-ruby',
+      git: 'https://github.com/celerbrake/celerbrake-ruby.git',
+      branch: 'main'
 end
 
 gem 'rubocop', '~> 1.21', require: false

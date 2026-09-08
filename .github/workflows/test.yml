@@ -8,6 +8,9 @@ permissions:
 jobs:
   test:
     strategy:
+      # One red entry must not cancel the others, or the matrix reports a single
+      # failure plus N cancellations and the real state is unknowable.
+      fail-fast: false
       matrix:
         os: [ubuntu-latest]
         ruby: [2.6, 2.7, 3.0, 3.1, jruby]
@@ -27,9 +30,6 @@ jobs:
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
-
-      - name: Rubocop lint
-        run: bundle exec rubocop
 
       - name: Install Bundler dependencies
         run: bundle install
@@ -62,3 +62,13 @@ jobs:
 
       - name: Test Rack
         run: bundle exec appraisal rack rake spec:integration:rack
+
+      # Lint LAST, on purpose. It used to run first, so a style offence skipped
+      # every step below it — and because `.rubocop.yml` sets `NewCops: enable`
+      # against an unpinned rubocop, a new cop in someone else's release could
+      # do that without a line changing here. That is how this workflow went red
+      # on 2026-05-20 and stayed red, with no test having run since. The job
+      # still FAILS on an offence; it just no longer hides whether the suites
+      # pass.
+      - name: Rubocop lint
+        run: bundle exec rubocop
