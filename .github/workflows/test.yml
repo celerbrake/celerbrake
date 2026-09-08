@@ -47,24 +47,31 @@ jobs:
       - name: Install Appraisal dependencies
         run: bundle exec appraisal install
 
+      # Report every integration suite, not just the first to fail. One red
+      # framework was hiding the state of the other five — the same way the
+      # lint step used to hide all of them. The job still fails.
       - name: Test Rails 5.2
-        if: ${{ matrix.ruby != '3.0' && matrix.ruby != '3.1' }}
+        if: ${{ always() && (matrix.ruby != '3.0' && matrix.ruby != '3.1') }}
         run: bundle exec appraisal rails-5.2 rake spec:integration:rails
 
       - name: Test Rails 6.0
+        if: ${{ always() }}
         run: bundle exec appraisal rails-6.0 rake spec:integration:rails
 
       - name: Test Rails 6.1
+        if: ${{ always() }}
         run: bundle exec appraisal rails-6.1 rake spec:integration:rails
 
       - name: Test Rails 7.0
-        if: ${{ matrix.ruby != '2.6' && matrix.ruby != 'jruby' }}
+        if: ${{ always() && (matrix.ruby != '2.6' && matrix.ruby != 'jruby') }}
         run: bundle exec appraisal rails-7.0 rake spec:integration:rails
 
       - name: Test Sinatra
+        if: ${{ always() }}
         run: bundle exec appraisal sinatra rake spec:integration:sinatra
 
       - name: Test Rack
+        if: ${{ always() }}
         run: bundle exec appraisal rack rake spec:integration:rack
 
       # Lint LAST, on purpose. It used to run first, so a style offence skipped
