@@ -11,7 +11,7 @@ if Gem::Version.new(RUBY_VERSION) < Gem::Version.new('3.0.0')
     gem 'sqlite3', '~> 1.4', platforms: %i[mri rbx]
 
     gem 'resque', '~> 1.26'
-    gem 'resque_spec', github: 'celerbrake/resque_spec'
+    gem 'resque_spec', github: 'airbrake/resque_spec'
 
     gem 'delayed', '~> 0.4'
 
@@ -28,7 +28,7 @@ appraise 'rails-6.0' do
   gem 'sqlite3', '~> 1.4', platforms: %i[mri rbx]
 
   gem 'resque', '~> 1.26'
-  gem 'resque_spec', github: 'celerbrake/resque_spec'
+  gem 'resque_spec', github: 'airbrake/resque_spec'
 
   gem 'delayed', '~> 0.4'
 
@@ -47,7 +47,7 @@ appraise 'rails-6.1' do
   gem 'sqlite3', '~> 1.4', platforms: %i[mri rbx]
 
   gem 'resque', '~> 1.26'
-  gem 'resque_spec', github: 'celerbrake/resque_spec'
+  gem 'resque_spec', github: 'airbrake/resque_spec'
 
   gem 'delayed', '~> 0.4'
 
@@ -67,7 +67,7 @@ if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('2.7.0')
     gem 'sqlite3', '~> 1.4', platforms: %i[mri rbx]
 
     gem 'resque', '~> 1.26'
-    gem 'resque_spec', github: 'celerbrake/resque_spec'
+    gem 'resque_spec', github: 'airbrake/resque_spec'
 
     gem 'delayed', '~> 0.4'
 

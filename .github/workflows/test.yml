@@ -8,6 +8,9 @@ permissions:
 jobs:
   test:
     strategy:
+      # One red entry must not cancel the others, or the matrix reports a single
+      # failure plus N cancellations and the real state is unknowable.
+      fail-fast: false
       matrix:
         os: [ubuntu-latest]
         ruby: [2.6, 2.7, 3.0, 3.1, jruby]
@@ -28,37 +31,56 @@ jobs:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
 
-      - name: Rubocop lint
-        run: bundle exec rubocop
-
       - name: Install Bundler dependencies
         run: bundle install
-
-      - name: Install Appraisal dependencies
-        run: bundle exec appraisal install
 
       - name: Display Ruby version
         run: ruby -v
 
+      # Unit specs need only the main bundle, so run them BEFORE appraisal —
+      # one unresolvable integration dependency must never be able to take the
+      # unit suite down with it, which is exactly what happened while the
+      # gemfiles pointed at a resque_spec fork that did not exist.
       - name: Unit tests
         run: bundle exec rake spec:unit
 
+      - name: Install Appraisal dependencies
+        run: bundle exec appraisal install
+
+      # Report every integration suite, not just the first to fail. One red
+      # framework was hiding the state of the other five — the same way the
+      # lint step used to hide all of them. The job still fails.
       - name: Test Rails 5.2
-        if: ${{ matrix.ruby != '3.0' && matrix.ruby != '3.1' }}
+        if: ${{ always() && (matrix.ruby != '3.0' && matrix.ruby != '3.1') }}
         run: bundle exec appraisal rails-5.2 rake spec:integration:rails
 
       - name: Test Rails 6.0
+        if: ${{ always() }}
         run: bundle exec appraisal rails-6.0 rake spec:integration:rails
 
       - name: Test Rails 6.1
+        if: ${{ always() }}
         run: bundle exec appraisal rails-6.1 rake spec:integration:rails
 
       - name: Test Rails 7.0
-        if: ${{ matrix.ruby != '2.6' && matrix.ruby != 'jruby' }}
+        if: ${{ always() && (matrix.ruby != '2.6' && matrix.ruby != 'jruby') }}
         run: bundle exec appraisal rails-7.0 rake spec:integration:rails
 
       - name: Test Sinatra
+        if: ${{ always() }}
         run: bundle exec appraisal sinatra rake spec:integration:sinatra
 
       - name: Test Rack
+        if: ${{ always() }}
         run: bundle exec appraisal rack rake spec:integration:rack
+
+      # Lint LAST, on purpose. It used to run first, so a style offence skipped
+      # every step below it — and because `.rubocop.yml` sets `NewCops: enable`
+      # against an unpinned rubocop, a new cop in someone else's release could
+      # do that without a line changing here. That is how this workflow went red
+      # on 2026-05-20 and stayed red, with no test having run since. The job
+      # still FAILS on an offence; it just no longer hides whether the suites
+      # pass.
+      - name: Rubocop lint
+        if: ${{ always() }}
+        run: bundle exec rubocop
