@@ -69,17 +69,13 @@ RSpec.describe Celerbrake::Rack::Instrumentable do
 
         prepend(
           Module.new do
-            # rubocop:disable Lint/UselessMethodDefinition
             def prepended_method!(*args, **kw_args)
               super
             end
-            # rubocop:enable Lint/UselessMethodDefinition
 
-            # rubocop:disable Lint/UselessMethodDefinition
             def prepended_writer=(*args, **kw_args)
               super
             end
-            # rubocop:enable Lint/UselessMethodDefinition
 
             protected
 

@@ -1,10 +1,10 @@
 # Explanations of all possible options:
 #   https://github.com/bbatsov/rubocop/blob/master/config/default.yml
 AllCops:
-  TargetRubyVersion: 2.6
+  TargetRubyVersion: 3.0
   DisplayCopNames: true
   DisplayStyleGuide: true
-  NewCops: enable
+  NewCops: disable
   Exclude:
     - 'gemfiles/*.gemfile'
     - 'vendor/**/*'
@@ -19,12 +19,14 @@ Metrics/MethodLength:
 Gemspec/DevelopmentDependencies:
   Enabled: false
 
-# NOTE: `NewCops: enable` above means every rubocop release can add cops that
-# fail this build without a single line changing here — which is exactly how CI
-# went red on 2026-05-20 and stayed red, hiding the fact that the test steps
-# below it were being SKIPPED entirely. Keeping it enabled is defensible (new
-# checks are worth having), but it is only safe because the Test steps now run
-# even when lint fails.
+# NOTE: `NewCops: disable` above, paired with the patch-range rubocop pin in
+# the Gemfile. `NewCops: enable` on an unpinned rubocop meant every rubocop
+# release could add cops that failed this build with no line changing here,
+# which is exactly how CI went red on 2026-05-20 and stayed red, hiding the
+# fact that the test steps below it were being SKIPPED entirely. New cops are
+# still worth having; they are now adopted when someone bumps the pin and
+# fixes what the new cops find, which is a deliberate act rather than a
+# surprise on an unrelated pull request.
 
 Layout/LineLength:
   Max: 90
@@ -59,7 +61,7 @@ Style/FrozenStringLiteralComment:
 Metrics/BlockLength:
   CountComments: false
   Max: 25
-  IgnoredMethods:
+  AllowedMethods:
     - describe
     - context
   Exclude:

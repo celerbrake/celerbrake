@@ -5,7 +5,7 @@ module Celerbrake
     # BacktraceCleaner is a wrapper around Rails.backtrace_cleaner.
     class BacktraceCleaner
       # @return [Regexp]
-      CELERBRAKE_FRAME_PATTERN = %r{/celerbrake/lib/celerbrake/}.freeze
+      CELERBRAKE_FRAME_PATTERN = %r{/celerbrake/lib/celerbrake/}
 
       def self.clean(backtrace)
         ::Rails.backtrace_cleaner.clean(backtrace).first(1)

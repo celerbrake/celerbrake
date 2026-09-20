@@ -57,7 +57,9 @@ RSpec.describe "celerbrake/rake/tasks" do
 
     after { task.reenable }
 
-    let(:celerbrake_vars) { "CELERBRAKE_PROJECT_ID=1\nCELERBRAKE_API_KEY=2\nRAILS_ENV=3\n" }
+    let(:celerbrake_vars) do
+      "CELERBRAKE_PROJECT_ID=1\nCELERBRAKE_API_KEY=2\nRAILS_ENV=3\n"
+    end
     let(:silenced_stdout) { File.new(File::NULL, 'w') }
 
     describe "parsing environment variables" do

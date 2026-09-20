@@ -28,7 +28,7 @@ module Celerbrake
           result = yield
         end
 
-        routes.each do |_route_path, params|
+        routes.each_value do |params|
           params[:groups].merge!(timed_trace.spans)
         end
       end

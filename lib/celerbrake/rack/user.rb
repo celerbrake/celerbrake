@@ -49,7 +49,7 @@ module Celerbrake
         user[:username] = try_to_get(:username)
         user[:email] = try_to_get(:email)
 
-        user = user.delete_if { |_key, val| val.nil? }
+        user.delete_if { |_key, val| val.nil? }
         user.empty? ? user : { user: user }
       end
 

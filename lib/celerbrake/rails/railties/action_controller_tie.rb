@@ -62,7 +62,9 @@ module Celerbrake
         end
 
         def tie_curl
-          require 'celerbrake/rails/curb' if defined?(Curl) && defined?(Curl::CURB_VERSION)
+          return unless defined?(Curl) && defined?(Curl::CURB_VERSION)
+
+          require 'celerbrake/rails/curb'
         end
 
         def tie_http
