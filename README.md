@@ -13,9 +13,9 @@ Shoryuken, Sneakers, ActiveJob, Rack, and more.
 > **Heritage.** Celerbrake began as a fork of the
 > [airbrake][airbrake] gem (v13.0.2) and stays wire-compatible with the Airbrake
 > v3 `create-notice` API. The difference is where your errors go: a Celerbrake
-> instance you run, with a default host of `https://api.celerbrake.com` instead
-> of a third-party service. We're grateful to Airbrake Technologies, Inc. for
-> the original, MIT-licensed work — see [LICENSE.md](LICENSE.md).
+> instance you run, rather than a third-party service. We're grateful to Airbrake
+> Technologies, Inc. for the original, MIT-licensed work — see
+> [LICENSE.md](LICENSE.md).
 
 ## Installation
 
@@ -49,15 +49,19 @@ CELERBRAKE_PROJECT_ID=1
 CELERBRAKE_PROJECT_KEY=...the api_key from the admin page...
 ```
 
-To point at your own instance instead of the default
-`https://api.celerbrake.com`, add a host line to the initializer:
+**Always point the gem at your own instance.** The host baked into
+`celerbrake-ruby`'s config (`https://api.celerbrake.com`) is a leftover from the
+fork and **no longer resolves**, and nothing warns you: an unset host means
+notices report into a DNS hole. Changing that default is a separate decision,
+because it means a lockfile bump and a redeploy for every app on the fleet, so
+set the host yourself:
 
 ```ruby
 # config/initializers/celerbrake.rb
 Celerbrake.configure do |c|
   c.project_id  = ENV.fetch('CELERBRAKE_PROJECT_ID').to_i
   c.project_key = ENV.fetch('CELERBRAKE_PROJECT_KEY')
-  c.host        = ENV.fetch('CELERBRAKE_HOST') # e.g. https://errors.example.com
+  c.host        = ENV.fetch('CELERBRAKE_HOST') # e.g. https://celerbrake.com
   c.environment = Rails.env
   c.ignore_environments = %w[development test]
 end
