@@ -316,7 +316,19 @@ RSpec.describe "Rails integration specs" do
         hash_including(
           route: '/crash(.:format)',
           method: 'GET',
-          func: 'call',
+          # `func` is whatever label Ruby's backtrace gave this frame, and
+          # three shapes all name this subscriber's `call`:
+          #
+          #   Ruby <= 3.3  "call"
+          #   Ruby >= 3.4  "Celerbrake::Rails::ActiveRecordSubscriber#call"
+          #   Ruby >= 3.4, older celerbrake-ruby
+          #                "'Celerbrake::Rails::ActiveRecordSubscriber#call'"
+          #
+          # 3.4 qualifies a label with its owner. The quoted third shape is
+          # celerbrake-ruby's backtrace pattern still expecting the pre-3.4
+          # backtick; this gem git-sources that notifier from main, so the
+          # trailing quote stays optional until the fix there lands.
+          func: a_string_matching(/(?:\A|#)call'?\z/),
           file: 'lib/celerbrake/rails/active_record_subscriber.rb',
           line: anything,
         ),

@@ -15,7 +15,7 @@ module Celerbrake
 
         event = Celerbrake::Rails::Event.new(*args)
 
-        routes.each do |_route_path, params|
+        routes.each_value do |params|
           params[:groups][:http] ||= 0
           params[:groups][:http] += event.duration
         end

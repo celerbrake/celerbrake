@@ -30,7 +30,10 @@ DESC
   s.require_path = 'lib'
   s.files        = ['lib/celerbrake.rb', *Dir.glob('lib/**/*')]
 
-  s.required_ruby_version = '>= 2.6'
+  # 3.0 is the floor CI tests: Rails 5.2 and 6.0 (the only reason 2.6 and
+  # 2.7 were in the matrix) are EOL and were dropped on 2026-09-20. Do not
+  # claim support for a Ruby nothing exercises.
+  s.required_ruby_version = '>= 3.0'
 
   s.metadata = {
     'rubygems_mfa_required' => 'true',

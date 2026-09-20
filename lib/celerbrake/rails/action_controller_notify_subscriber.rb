@@ -17,7 +17,7 @@ module Celerbrake
 
         event = Celerbrake::Rails::Event.new(*args)
 
-        routes.each do |route, _params|
+        routes.each_key do |route|
           Celerbrake.notify_request(
             method: event.method,
             route: route,

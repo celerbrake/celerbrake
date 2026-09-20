@@ -5,7 +5,9 @@ require 'celerbrake-ruby'
 namespace :celerbrake do
   desc 'Verify your gem installation by sending a test exception'
   task test: (:environment if defined?(Rails)) do
-    raise Celerbrake::Error, 'celerbrake-ruby is not configured' unless Celerbrake.configured?
+    unless Celerbrake.configured?
+      raise Celerbrake::Error, 'celerbrake-ruby is not configured'
+    end
 
     require 'pp'
 
@@ -50,7 +52,9 @@ namespace :celerbrake do
       end
     end
 
-    raise Celerbrake::Error, 'celerbrake-ruby is not configured' unless Celerbrake.configured?
+    unless Celerbrake.configured?
+      raise Celerbrake::Error, 'celerbrake-ruby is not configured'
+    end
 
     deploy_params = {
       environment: ENV.fetch('ENVIRONMENT', nil),

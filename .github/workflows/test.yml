@@ -1,19 +1,44 @@
 name: celerbrake
 
-on: [push]
+on:
+  push:
+  pull_request:
 
 permissions:
   contents: read
 
 jobs:
-  test:
+  # Lint once, on the Ruby the fleet runs, rather than once per matrix entry.
+  # It also runs LAST in dependency terms only: it is its own job now, so a
+  # style offence can no longer skip a single test step. That mattered: lint
+  # used to be the first step of the one big job, so an offence skipped every
+  # suite below it, and because `.rubocop.yml` set `NewCops: enable` against an
+  # unpinned rubocop, a new cop in someone else's release could do that without
+  # a line changing here. That is how this workflow went red on 2026-05-20 and
+  # stayed red with no test having run since. rubocop is now pinned to a patch
+  # range and `NewCops: disable`, so a bump is a deliberate act.
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+          bundler-cache: true
+
+      - name: Rubocop
+        run: bundle exec rubocop
+
+  unit:
     strategy:
       # One red entry must not cancel the others, or the matrix reports a single
       # failure plus N cancellations and the real state is unknowable.
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        ruby: [2.6, 2.7, 3.0, 3.1, jruby]
+        ruby: ['3.0', '3.1', '3.2', '3.3', '3.4']
 
     runs-on: ${{ matrix.os }}
 
@@ -31,56 +56,69 @@ jobs:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
 
-      - name: Install Bundler dependencies
-        run: bundle install
+      - name: Display Ruby version
+        run: ruby -v
+
+      # Unit specs need only the main bundle, so they never wait on an
+      # integration bundle resolving. One unresolvable integration dependency
+      # must not be able to take the unit suite down with it, which is exactly
+      # what happened while the gemfiles pointed at a resque_spec fork that did
+      # not exist.
+      - name: Unit tests
+        run: bundle exec rake spec:unit
+
+  # One job per (Ruby, appraisal) pair rather than every appraisal inside every
+  # Ruby. Each framework version has its own Ruby window, the cross product is
+  # mostly invalid, and a separate job per pair means a red Rails version names
+  # itself instead of hiding inside a job that also ran five others.
+  integration:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Rails 5.2 and 6.0 were dropped on 2026-09-20 along with Ruby 2.6,
+          # 2.7 and JRuby. See the pull request for the reasoning; the short
+          # version is that they are EOL, they were the only reason the matrix
+          # carried a Ruby older than 3.0, and JRuby cannot load
+          # rbtree-jruby on JRuby 10.
+          - { ruby: '3.2', appraisal: 'rails-6.1', suite: 'rails' }
+          - { ruby: '3.3', appraisal: 'rails-7.0', suite: 'rails' }
+          - { ruby: '3.3', appraisal: 'rails-7.1', suite: 'rails' }
+          - { ruby: '3.4', appraisal: 'rails-7.2', suite: 'rails' }
+          # The fleet runs Rails 8.1 on Ruby 3.4. Until this entry there was
+          # no Rails 8 coverage at all: the newest framework tested was 7.0.
+          - { ruby: '3.4', appraisal: 'rails-8.0', suite: 'rails' }
+          - { ruby: '3.4', appraisal: 'sinatra', suite: 'sinatra' }
+          - { ruby: '3.4', appraisal: 'rack', suite: 'rack' }
+
+    runs-on: ubuntu-latest
+    name: ${{ matrix.appraisal }} (ruby ${{ matrix.ruby }})
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Update package list
+        run: sudo apt-get update
+
+      - name: Install cURL Headers
+        run: sudo apt-get install libcurl4 libcurl4-openssl-dev
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
 
       - name: Display Ruby version
         run: ruby -v
 
-      # Unit specs need only the main bundle, so run them BEFORE appraisal —
-      # one unresolvable integration dependency must never be able to take the
-      # unit suite down with it, which is exactly what happened while the
-      # gemfiles pointed at a resque_spec fork that did not exist.
-      - name: Unit tests
-        run: bundle exec rake spec:unit
+      # `appraisal <name> bundle install`, not `appraisal <name> install`: the
+      # per-appraisal form runs whatever follows as a command under that
+      # gemfile, so the shorter spelling runs /usr/bin/install and silently
+      # installs nothing.
+      - name: Install appraisal dependencies
+        run: bundle exec appraisal ${{ matrix.appraisal }} bundle install
 
-      - name: Install Appraisal dependencies
-        run: bundle exec appraisal install
-
-      # Report every integration suite, not just the first to fail. One red
-      # framework was hiding the state of the other five — the same way the
-      # lint step used to hide all of them. The job still fails.
-      - name: Test Rails 5.2
-        if: ${{ always() && (matrix.ruby != '3.0' && matrix.ruby != '3.1') }}
-        run: bundle exec appraisal rails-5.2 rake spec:integration:rails
-
-      - name: Test Rails 6.0
-        if: ${{ always() }}
-        run: bundle exec appraisal rails-6.0 rake spec:integration:rails
-
-      - name: Test Rails 6.1
-        if: ${{ always() }}
-        run: bundle exec appraisal rails-6.1 rake spec:integration:rails
-
-      - name: Test Rails 7.0
-        if: ${{ always() && (matrix.ruby != '2.6' && matrix.ruby != 'jruby') }}
-        run: bundle exec appraisal rails-7.0 rake spec:integration:rails
-
-      - name: Test Sinatra
-        if: ${{ always() }}
-        run: bundle exec appraisal sinatra rake spec:integration:sinatra
-
-      - name: Test Rack
-        if: ${{ always() }}
-        run: bundle exec appraisal rack rake spec:integration:rack
-
-      # Lint LAST, on purpose. It used to run first, so a style offence skipped
-      # every step below it — and because `.rubocop.yml` sets `NewCops: enable`
-      # against an unpinned rubocop, a new cop in someone else's release could
-      # do that without a line changing here. That is how this workflow went red
-      # on 2026-05-20 and stayed red, with no test having run since. The job
-      # still FAILS on an offence; it just no longer hides whether the suites
-      # pass.
-      - name: Rubocop lint
-        if: ${{ always() }}
-        run: bundle exec rubocop
+      - name: Test
+        run: >
+          bundle exec appraisal ${{ matrix.appraisal }}
+          rake spec:integration:${{ matrix.suite }}
